@@ -3,6 +3,7 @@ package ru.thecop.jh.blog.web.rest;
 import com.codahale.metrics.annotation.Timed;
 import ru.thecop.jh.blog.domain.Entry;
 import ru.thecop.jh.blog.repository.EntryRepository;
+import ru.thecop.jh.blog.security.SecurityUtils;
 import ru.thecop.jh.blog.web.rest.errors.BadRequestAlertException;
 import ru.thecop.jh.blog.web.rest.util.HeaderUtil;
 import ru.thecop.jh.blog.web.rest.util.PaginationUtil;
@@ -93,12 +94,12 @@ public class EntryResource {
     @Timed
     public ResponseEntity<List<Entry>> getAllEntries(Pageable pageable, @RequestParam(required = false, defaultValue = "false") boolean eagerload) {
         log.debug("REST request to get a page of Entries");
-        Page<Entry> page;
-        if (eagerload) {
-            page = entryRepository.findAllWithEagerRelationships(pageable);
-        } else {
-            page = entryRepository.findAll(pageable);
-        }
+        Page<Entry> page = entryRepository.findByBlogUserLoginOrderByDateDesc(SecurityUtils.getCurrentUserLogin().orElse(null),pageable);
+//        if (eagerload) {
+//            page = entryRepository.findAllWithEagerRelationships(pageable);
+//        } else {
+//            page = entryRepository.findAll(pageable);
+//        }
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(page, String.format("/api/entries?eagerload=%b", eagerload));
         return new ResponseEntity<>(page.getContent(), headers, HttpStatus.OK);
     }

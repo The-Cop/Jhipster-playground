@@ -1,8 +1,10 @@
 package ru.thecop.jh.blog.web.rest;
 
 import com.codahale.metrics.annotation.Timed;
+import org.springframework.http.HttpStatus;
 import ru.thecop.jh.blog.domain.Blog;
 import ru.thecop.jh.blog.repository.BlogRepository;
+import ru.thecop.jh.blog.security.SecurityUtils;
 import ru.thecop.jh.blog.web.rest.errors.BadRequestAlertException;
 import ru.thecop.jh.blog.web.rest.util.HeaderUtil;
 import io.github.jhipster.web.util.ResponseUtil;
@@ -86,7 +88,7 @@ public class BlogResource {
     @Timed
     public List<Blog> getAllBlogs() {
         log.debug("REST request to get all Blogs");
-        return blogRepository.findAll();
+        return blogRepository.findByUserIsCurrentUser();
     }
 
     /**
@@ -100,6 +102,12 @@ public class BlogResource {
     public ResponseEntity<Blog> getBlog(@PathVariable Long id) {
         log.debug("REST request to get Blog : {}", id);
         Optional<Blog> blog = blogRepository.findById(id);
+        if (blog.isPresent()
+                && blog.get().getUser()!=null
+                && !blog.get().getUser().getLogin().equals(SecurityUtils.getCurrentUserLogin().orElse(""))) {
+            return new ResponseEntity("error.http.403", HttpStatus.FORBIDDEN);
+
+        }
         return ResponseUtil.wrapOrNotFound(blog);
     }
 
